@@ -321,17 +321,15 @@ impl<'a> ObjectClient<'a> {
             Some(x) => format!("{}", x),
             None => "".to_string(),
         };
-        println!("from to {}-{} ", from, to);
-        let req = self
+        let resp = self
             .0
             .client
             .get(&url)
             .headers(self.0.get_headers().await?)
-            .header(RANGE, format!("bytes={}-{}", from, to));
-
-        println!("{:?}", req);
-        let resp = req.send().await.unwrap();
-        println!("HERE2");
+            .header(RANGE, format!("bytes={}-{}", from, to))
+            .send()
+            .await
+            .unwrap();
         if resp.status() == StatusCode::NOT_FOUND {
             Err(crate::Error::Other(resp.text().await?))
         } else {

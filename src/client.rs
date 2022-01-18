@@ -46,7 +46,7 @@ impl Default for Client {
 impl Client {
     /// Constructs a client with the default token provider, where it attemps to obtain the
     /// credentials from the following locations:
-    /// 
+    ///
     /// 1. Checks for the environment variable `SERVICE_ACCOUNT`, and if it exists, reads the file
     /// at the path specified there as a credentials json file.
     /// 2. It attemps to do the same with the `GOOGLE_APPLICATION_CREDENTIALS` var.
@@ -95,12 +95,16 @@ impl Client {
     }
 
     async fn get_headers(&self) -> crate::Result<reqwest::header::HeaderMap> {
+        println!("get_headers start");
         let mut result = reqwest::header::HeaderMap::new();
+        println!("get_headers start1");
         let token = self.token_cache.get(&self.client).await?;
+        println!("get_headers start2");
         result.insert(
             reqwest::header::AUTHORIZATION,
             format!("Bearer {}", token).parse().unwrap(),
         );
+        println!("get_headers end");
         Ok(result)
     }
 }

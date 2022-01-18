@@ -1,4 +1,5 @@
 use futures::{stream, Stream, TryStream};
+use reqwest::header::RANGE;
 use reqwest::StatusCode;
 
 use crate::{
@@ -296,6 +297,48 @@ impl<'a> ObjectClient<'a> {
         }
     }
 
+    /// Download the content of the object with the specified name in the specified bucket.
+    pub async fn download_with_range(
+        &self,
+        bucket: &str,
+        file_name: &str,
+        range_from: Option<usize>,
+        range_to: Option<usize>,
+    ) -> crate::Result<Vec<u8>> {
+        let url = format!(
+            "{}/b/{}/o/{}?alt=media",
+            crate::BASE_URL,
+            percent_encode(bucket),
+            percent_encode(file_name),
+        );
+
+        let from = match range_from {
+            Some(x) => format!("{}", x),
+            None => "".to_string(),
+        };
+
+        let to = match range_to {
+            Some(x) => format!("{}", x),
+            None => "".to_string(),
+        };
+        println!("from to {}-{} ", from, to);
+        let req = self
+            .0
+            .client
+            .get(&url)
+            .headers(self.0.get_headers().await?)
+            .header(RANGE, format!("bytes={}-{}", from, to));
+
+        println!("{:?}", req);
+        let resp = req.send().await.unwrap();
+        println!("HERE2");
+        if resp.status() == StatusCode::NOT_FOUND {
+            Err(crate::Error::Other(resp.text().await?))
+        } else {
+            Ok(resp.error_for_status()?.bytes().await?.to_vec())
+        }
+    }
+
     /// Download the content of the object with the specified name in the specified bucket, without
     /// allocating the whole file into a vector.
     /// ### Example
@@ -565,7 +608,7 @@ impl<'a> ObjectClient<'a> {
         );
         let mut headers = self.0.get_headers().await?;
         headers.insert(CONTENT_LENGTH, "0".parse()?);
-        let s =  self
+        let s = self
             .0
             .client
             .post(&url)
@@ -578,8 +621,8 @@ impl<'a> ObjectClient<'a> {
         let result: RewriteResponse = serde_json::from_str(dbg!(&s)).unwrap();
         Ok(result.resource)
         // match result {
-            // GoogleResponse::Success(s) => Ok(s.resource),
-            // GoogleResponse::Error(e) => Err(e.into()),
+        // GoogleResponse::Success(s) => Ok(s.resource),
+        // GoogleResponse::Error(e) => Err(e.into()),
         // }
     }
 }

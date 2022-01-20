@@ -1,3 +1,4 @@
+use crate::ServiceAccount;
 use std::fmt::{Display, Formatter};
 
 /// Trait that refreshes a token when it is expired
@@ -100,6 +101,9 @@ impl TokenCache for Token {
     }
 
     async fn fetch_token(&self, client: &reqwest::Client) -> crate::Result<(String, u64)> {
+        if *crate::SERVICE_ACCOUNT == ServiceAccount::default() {
+            return Err(crate::Error::Other("test".to_string()));
+        }
         let now = now();
         let exp = now + 3600;
 

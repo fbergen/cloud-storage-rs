@@ -96,11 +96,12 @@ impl Client {
 
     async fn get_headers(&self) -> crate::Result<reqwest::header::HeaderMap> {
         let mut result = reqwest::header::HeaderMap::new();
-        let token = self.token_cache.get(&self.client).await?;
-        result.insert(
-            reqwest::header::AUTHORIZATION,
-            format!("Bearer {}", token).parse().unwrap(),
-        );
+        if let Ok(token) = self.token_cache.get(&self.client).await {
+            result.insert(
+                reqwest::header::AUTHORIZATION,
+                format!("Bearer {}", token).parse().unwrap(),
+            );
+        }
         Ok(result)
     }
 }
